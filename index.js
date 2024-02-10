@@ -5,7 +5,9 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import dotenv from "dotenv";
 
+dotenv.config();
 // Get the current file name and directory path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -148,6 +150,43 @@ app.post("/upload/:id", (req, res) => {
   });
 });
 
+app.delete("/delete-all-images", (req, res) => {
+  const password = req.query.password;
+
+  // Check if the provided password matches the one in the environment variables
+  if (password !== process.env.PASSWORD) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const imagesDirectory = path.join(__dirname, "images");
+
+  // Check if the folder exists
+  if (!fs.existsSync(imagesDirectory)) {
+    return res.send("No images to delete.");
+  }
+
+  // Delete all images in the directory
+  fs.readdir(imagesDirectory, (err, files) => {
+    if (err) {
+      console.error("Error reading directory:", err);
+      return res.sendStatus(500);
+    }
+
+    files.forEach((file) => {
+      fs.unlink(path.join(imagesDirectory, file), (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+        } else {
+          console.log("Deleted file:", file);
+        }
+      });
+    });
+
+    // Send response after deleting all images
+    res.send("All images deleted successfully.");
+  });
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
@@ -159,3 +198,6 @@ app.listen(port, () => {
 
 // To Get an Image from the Server:
 // curl -o received_image.jpg http://localhost:8080/image/3
+
+//To Delete all Images from the Server:
+// curl -X DELETE "http://localhost:8080/delete-all-images?password=your_password_here"
