@@ -6,15 +6,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
+// Get the current file name and directory path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Now you can use __dirname in the same way as in CommonJS modules
-
+// Initialize Express app
 const app = express();
-// Use the port provided by Render or fallback to 80 for local development
 const port = process.env.PORT || 8080;
+
+// Enable CORS
 app.use(cors());
+
 // Middleware to handle file uploads
 app.use(
   fileUpload({
@@ -25,26 +27,69 @@ app.use(
   })
 );
 
-// GET request handler to serve the uploaded image
+// GET request handler to serve a specific image based on ID
+app.get("/image/:id", (req, res) => {
+  console.log("Received GET request to /image/:id");
+
+  // Extract ID from the request params
+  const id = req.params.id;
+
+  // Check if the folder exists
+  const imagesDirectory = path.join(__dirname, "images");
+  if (!fs.existsSync(imagesDirectory)) {
+    return res.send("No images uploaded yet.");
+  }
+
+  // Read the images directory
+  const files = fs.readdirSync(imagesDirectory);
+
+  // Find the image with the matching ID prefix
+  const matchingImage = files.find((file) => file.startsWith(`${id}_`));
+  console.log("Matching image:", matchingImage);
+
+  if (!matchingImage) {
+    return res.send("No image found for the specified ID.");
+  }
+
+  // Construct the full path to the image
+  const imagePath = path.join(imagesDirectory, matchingImage);
+
+  // Send the matched image
+  console.log("Sending image:", imagePath);
+  return res.sendFile(imagePath);
+});
+
+// GET request handler to display all images and their names
 app.get("/", (req, res) => {
   console.log("Received GET request to /");
-  // Check if the image exists, if not return a default response
-  if (!fs.existsSync("./images")) {
-    return res.send("No image uploaded yet.");
+
+  // Check if the folder exists
+  const imagesDirectory = path.join(__dirname, "images");
+  if (!fs.existsSync(imagesDirectory)) {
+    return res.send("No images uploaded yet.");
   }
-  // Read the image file and send it as a response
-  const files = fs.readdirSync("./images");
-  if (files.length > 0) {
-    const imagePath = path.join(__dirname, "images", files[0]); // Construct absolute path
-    return res.sendFile(imagePath);
-  } else {
-    return res.send("No image uploaded yet.");
-  }
+
+  // Read the images directory
+  const files = fs.readdirSync(imagesDirectory);
+
+  // Construct HTML to display images and their names
+  let html = "<h1>All Bubble Top Status</h1>";
+  files.forEach((file) => {
+    // Extract the ID from the file name
+    const id = file.split("_")[0];
+    html += `<div><img src="/image/${id}" width="200"><br>${file}</div>`;
+  });
+
+  // Send the HTML response
+  res.send(html);
 });
 
 // POST request handler to upload the image
-app.post("/upload", (req, res) => {
+app.post("/upload/:id", (req, res) => {
   console.log("Received POST request to /upload");
+
+  // Extract ID from the request params
+  const id = req.params.id;
 
   // If no files were uploaded, exit
   if (!req.files || !req.files.image) {
@@ -61,8 +106,8 @@ app.post("/upload", (req, res) => {
     return res.sendStatus(400);
   }
 
-  // Add the timestamp to the image name
-  const imageName = Date.now() + "_" + image.name;
+  // Add the ID prefix to the image name
+  const imageName = `${id}_${Date.now()}_${image.name}`;
 
   // Check if the folder exists, if not create it
   const imagesDirectory = path.join(__dirname, "images");
@@ -70,32 +115,32 @@ app.post("/upload", (req, res) => {
     fs.mkdirSync(imagesDirectory);
   }
 
-  // Move the uploaded image to our upload folder
-  image.mv(path.join(imagesDirectory, imageName), (err) => {
+  // Delete all other images with the same ID prefix in the directory
+  fs.readdir(imagesDirectory, (err, files) => {
     if (err) {
-      console.error("Error uploading image:", err);
+      console.error("Error reading directory:", err);
       return res.sendStatus(500);
     }
-    console.log("Image uploaded successfully:", imageName);
 
-    // Delete all other images in the directory
-    fs.readdir(imagesDirectory, (err, files) => {
+    files.forEach((file) => {
+      if (file.startsWith(`${id}_`)) {
+        fs.unlink(path.join(imagesDirectory, file), (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+          } else {
+            console.log("Deleted file:", file);
+          }
+        });
+      }
+    });
+
+    // Move the uploaded image to our upload folder
+    image.mv(path.join(imagesDirectory, imageName), (err) => {
       if (err) {
-        console.error("Error reading directory:", err);
+        console.error("Error uploading image:", err);
         return res.sendStatus(500);
       }
-
-      files.forEach((file) => {
-        if (file !== imageName) {
-          fs.unlink(path.join(imagesDirectory, file), (err) => {
-            if (err) {
-              console.error("Error deleting file:", err);
-            } else {
-              console.log("Deleted file:", file);
-            }
-          });
-        }
-      });
+      console.log("Image uploaded successfully:", imageName);
 
       // All good
       res.sendStatus(200);
@@ -107,3 +152,10 @@ app.post("/upload", (req, res) => {
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+// Be in the Folder u want the image to be in
+// To Send an Image to the Server:
+// curl -X POST -F "image=@land1.png" http://localhost:8080/upload/3
+
+// To Get an Image from the Server:
+// curl -o received_image.jpg http://localhost:8080/image/3
