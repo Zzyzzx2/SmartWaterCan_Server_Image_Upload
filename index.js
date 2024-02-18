@@ -6,8 +6,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import dotenv from "dotenv";
-const bodyParser = require("body-parser"); // Handles various incoming data formats
-const base64 = require("image-base64");
+import bodyParser from "body-parser";
+import base64 from "image-base64";
 
 dotenv.config();
 // Get the current file name and directory path
