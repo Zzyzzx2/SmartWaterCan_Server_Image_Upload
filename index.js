@@ -95,10 +95,11 @@ app.post("/upload/:id", (req, res) => {
   console.log("ID:", id);
   console.log("Request query:", req.query);
   console.log("Request file Name:", req.query.fileName);
+  console.log("Files available:", req.files);
   console.log("Request file:", req.files.image);
   console.log("Request file Name:", req.files.image.name);
   console.log("Request file Size:", req.files.image.size);
-  console.log("Files available:", req.files);
+
   // If no files were uploaded, exit
   if (!req.files || !req.files.image) {
     console.log("No files uploaded");
