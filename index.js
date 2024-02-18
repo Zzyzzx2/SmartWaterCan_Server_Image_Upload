@@ -92,7 +92,9 @@ app.post("/upload/:id", (req, res) => {
 
   // Extract ID from the request params
   const id = req.params.id;
-
+  console.log("ID:", id);
+  console.log("Request query:", req.query);
+  console.log("Request file Name:", req.query.fileName);
   // If no files were uploaded, exit
   if (!req.files || !req.files.image) {
     console.log("No files uploaded");
@@ -109,7 +111,7 @@ app.post("/upload/:id", (req, res) => {
   }
 
   // Add the ID prefix to the image name
-  const imageName = `${id}_${Date.now()}_${image.name}`;
+  const imageName = `${id}_${Date.now()}_${req.query.fileName}`;
 
   // Check if the folder exists, if not create it
   const imagesDirectory = path.join(__dirname, "images");
