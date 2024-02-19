@@ -6,8 +6,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import dotenv from "dotenv";
-import bodyParser from "body-parser";
-import base64 from "image-base64";
+// import bodyParser from "body-parser";
+// import base64 from "image-base64";
 
 dotenv.config();
 // Get the current file name and directory path
@@ -98,26 +98,26 @@ app.post("/upload/:id", (req, res) => {
   console.log("Request query:", req.query);
   console.log("Request file Name:", req.query.fileName);
   console.log("Files available:", req.body);
-  const imgdata = req.body;
-  const isBase64 = new Promise((resolve, reject) => {
-    base64.decode(
-      imgdata,
-      { format: "data-uri", autoDataUri: true },
-      (err, decoded) => {
-        if (err) {
-          reject(err); // Handle decode error gracefully
-        } else {
-          resolve(true); // Image is Base64
-        }
-      }
-    );
-  });
-  console.log("isBase64:", isBase64);
+  // const imgdata = req.body;
+  // const isBase64 = new Promise((resolve, reject) => {
+  //   base64.decode(
+  //     imgdata,
+  //     { format: "data-uri", autoDataUri: true },
+  //     (err, decoded) => {
+  //       if (err) {
+  //         reject(err); // Handle decode error gracefully
+  //       } else {
+  //         resolve(true); // Image is Base64
+  //       }
+  //     }
+  //   );
+  // });
+  // console.log("isBase64:", isBase64);
   // If no files were uploaded, exit
-  // if (!req.files || !req.files.image) {
-  //   console.log("No files uploaded");
-  //   return res.sendStatus(400);
-  // }
+  if (!req.files || !req.files.image) {
+    console.log("No files uploaded");
+    return res.sendStatus(400);
+  }
 
   // The name of the input field (i.e. "image") is used to retrieve the uploaded file
   let image = req.files.image;
